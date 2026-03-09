@@ -54,10 +54,21 @@ where
     let input_path = PathBuf::from(&request.input_path);
     let output_path = next_output_path(&input_path, preset.target_extension)?;
     let quality = quality_profile(&request.quality_preset);
-    let command = build_command(preset, &input_path, &output_path, &quality)?;
 
-    emit_progress(progress("running", &format!("Running {}", command.tool)));
-    let output = execute_command(&command)?;
+    let result = if matches!(preset.kind, PresetKind::RawToJpg) {
+        emit_progress(progress("running", "Running LibRaw decode and JPG encode"));
+        run_raw_conversion(request, &input_path, &output_path, &quality)?
+    } else {
+        let command = build_command(preset, &input_path, &output_path, &quality)?;
+        emit_progress(progress("running", &format!("Running {}", command.tool)));
+        let output = execute_command(&command)?;
+        ConversionResult {
+            output_path: output_path.display().to_string(),
+            preset_id: request.preset_id.clone(),
+            tool: command.tool.to_string(),
+            log_summary: summarize_output(&command, &output),
+        }
+    };
 
     if request.open_folder_after_convert {
         if let Some(folder) = output_path.parent() {
@@ -67,12 +78,7 @@ where
 
     emit_progress(progress("finished", &format!("Saved {}", output_path.display())));
 
-    Ok(ConversionResult {
-        output_path: output_path.display().to_string(),
-        preset_id: request.preset_id.clone(),
-        tool: command.tool.to_string(),
-        log_summary: summarize_output(&command, &output),
-    })
+    Ok(result)
 }
 
 fn validate_input_extension(input_path: &str, preset: &PresetDefinition) -> Result<(), ConversionError> {
@@ -129,7 +135,7 @@ fn build_command(
         PresetKind::PngToJpg | PresetKind::JpgToPng | PresetKind::RasterToWebp | PresetKind::HeicToJpg | PresetKind::SvgToPng | PresetKind::SvgToJpg => {
             magick_convert(resolve_tool("magick.exe")?, input, output, quality)
         }
-        PresetKind::RawToJpg => raw_to_jpg_command(resolve_tool("dcraw_emu.exe")?, resolve_tool("magick.exe")?, input_path, output_path, quality),
+        PresetKind::RawToJpg => unreachable!("RAW conversion is handled separately"),
         PresetKind::Mp3ToWav => audio_convert(resolve_tool("ffmpeg.exe")?, input, output, vec![OsString::from("-c:a"), OsString::from("pcm_s16le")], vec!["decoded to WAV".to_string()]),
         PresetKind::WavToMp3 | PresetKind::FlacToMp3 | PresetKind::OggToMp3 | PresetKind::AacToMp3 | PresetKind::M4aToMp3 => {
             audio_convert(resolve_tool("ffmpeg.exe")?, input, output, vec![OsString::from("-c:a"), OsString::from("libmp3lame"), OsString::from("-b:a"), OsString::from(quality.audio_bitrate)], vec!["encoded as MP3".to_string()])
@@ -235,28 +241,80 @@ fn magick_convert(
     }
 }
 
-fn raw_to_jpg_command(
-    dcraw_path: PathBuf,
-    magick_path: PathBuf,
+fn run_raw_conversion(
+    request: &ConversionRequest,
     input_path: &Path,
     output_path: &Path,
     quality: &QualityProfile,
-) -> CommandSpec {
-    let shell = format!(
-        "\"{}\" -c -w -o 1 \"{}\" | \"{}\" - -quality {} \"{}\"",
-        dcraw_path.display(),
-        input_path.display(),
-        magick_path.display(),
-        quality.image_quality,
-        output_path.display()
-    );
+) -> Result<ConversionResult, ConversionError> {
+    let dcraw_path = resolve_tool("dcraw_emu.exe")?;
+    let libraw_path = resolve_tool("libraw.dll")?;
+    let magick_path = resolve_tool("magick.exe")?;
+    let temp_ppm = output_path.with_extension("ppm");
 
-    CommandSpec {
-        program: PathBuf::from("cmd.exe"),
-        args: vec![OsString::from("/C"), OsString::from(shell)],
-        tool: "dcraw_emu + ImageMagick",
-        log_summary: vec!["RAW decode pipeline".to_string()],
+    let dcraw_output = Command::new(&dcraw_path)
+        .env("PATH", format!("{};{}", libraw_path.parent().unwrap_or(Path::new(".")).display(), std::env::var("PATH").unwrap_or_default()))
+        .args([
+            OsString::from("-w"),
+            OsString::from("-o"),
+            OsString::from("1"),
+            OsString::from("-6"),
+            OsString::from("-Z"),
+            OsString::from("-"),
+            input_path.as_os_str().to_os_string(),
+        ])
+        .output()
+        .map_err(|error| ConversionError::ProcessFailed {
+            tool: "dcraw_emu".to_string(),
+            details: format!("Failed to launch {}: {error}", dcraw_path.display()),
+        })?;
+
+    if !dcraw_output.status.success() {
+        let details = String::from_utf8_lossy(&dcraw_output.stderr).trim().to_string();
+        return Err(ConversionError::ProcessFailed {
+            tool: "dcraw_emu".to_string(),
+            details,
+        });
     }
+
+    fs::write(&temp_ppm, &dcraw_output.stdout)
+        .map_err(|error| ConversionError::ProcessFailed {
+            tool: "dcraw_emu".to_string(),
+            details: format!("Failed to write temporary RAW decode output: {error}"),
+        })?;
+
+    let magick_output = Command::new(&magick_path)
+        .args([
+            temp_ppm.as_os_str().to_os_string(),
+            OsString::from("-quality"),
+            OsString::from(quality.image_quality),
+            output_path.as_os_str().to_os_string(),
+        ])
+        .output()
+        .map_err(|error| ConversionError::ProcessFailed {
+            tool: "ImageMagick".to_string(),
+            details: format!("Failed to launch {}: {error}", magick_path.display()),
+        })?;
+
+    let _ = fs::remove_file(&temp_ppm);
+
+    if !magick_output.status.success() {
+        let details = String::from_utf8_lossy(&magick_output.stderr).trim().to_string();
+        return Err(ConversionError::ProcessFailed {
+            tool: "ImageMagick".to_string(),
+            details,
+        });
+    }
+
+    Ok(ConversionResult {
+        output_path: output_path.display().to_string(),
+        preset_id: request.preset_id.clone(),
+        tool: "dcraw_emu + ImageMagick".to_string(),
+        log_summary: vec![
+            "RAW decode pipeline".to_string(),
+            "temporary PPM staging".to_string(),
+        ],
+    })
 }
 
 fn execute_command(command: &CommandSpec) -> Result<Output, ConversionError> {
