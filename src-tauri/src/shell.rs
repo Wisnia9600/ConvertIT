@@ -121,7 +121,7 @@ fn build_shell_command(executable_path: &Path, preset_id: &str) -> String {
     };
 
     format!(
-        "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{}\" -ExecutablePath \"{}\" -InputPath \"%1\" -PresetId \"{}\"",
+        "powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{}\" -ExecutablePath \"{}\" -InputPath \"%1\" -PresetId \"{}\"",
         helper_script.display(),
         executable_path.display(),
         preset_id

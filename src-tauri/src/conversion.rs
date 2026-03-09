@@ -70,9 +70,7 @@ where
     };
 
     if request.open_folder_after_convert {
-        if let Some(folder) = output_path.parent() {
-            let _ = open::that_detached(folder);
-        }
+        reveal_output_path(&output_path);
     }
 
     emit_progress("finished", &format!("Saved {}", output_path.display()));
@@ -347,6 +345,20 @@ fn summarize_output(command: &CommandSpec, output: &Output) -> Vec<String> {
         summary.push(format!("exit code {:?}", output.status.code()));
     }
     summary
+}
+
+fn reveal_output_path(output_path: &Path) {
+    #[cfg(windows)]
+    {
+        let select_arg = OsString::from(format!(r#"/select,"{}""#, output_path.display()));
+        if Command::new("explorer.exe").arg(select_arg).spawn().is_ok() {
+            return;
+        }
+    }
+
+    if let Some(folder) = output_path.parent() {
+        let _ = open::that_detached(folder);
+    }
 }
 
 fn quality_profile(quality: &QualityPreset) -> QualityProfile {
