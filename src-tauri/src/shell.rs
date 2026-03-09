@@ -89,7 +89,18 @@ pub fn uninstall_shell_menu() -> Result<(), String> {
             Ok(_) => {}
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
             Err(error) => {
-                return Err(format!("Failed to remove shell key {key_path}: {error}"));
+                return Err(format!("Failed to remove shell key tree {key_path}: {error}"));
+            }
+        }
+
+        let parent_path = format!("{ROOT_KEY}\\.{}\\shell", extension);
+        if let Ok(parent_key) = hkcu.open_subkey_with_flags(&parent_path, winreg::enums::KEY_ALL_ACCESS) {
+            match parent_key.delete_subkey(MENU_NAME) {
+                Ok(_) => {}
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(error) => {
+                    return Err(format!("Failed to remove shell key root {key_path}: {error}"));
+                }
             }
         }
     }
