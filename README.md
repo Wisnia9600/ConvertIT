@@ -1,164 +1,135 @@
-# ConvertIT
+# 🔄 ConvertIT
 
-**ConvertIT** is a lightweight Windows file converter with Explorer context-menu integration.
+[![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-blue.svg)]()
+[![Bundle: Tauri](https://img.shields.io/badge/Built_with-Tauri%20%7C%20Rust%20%7C%20React-orange.svg)]()
+[![Installer Size](https://img.shields.io/badge/Size-~105_MB-success.svg)]()
 
-Right-click a supported file, open `Convert to`, and export it to a practical format without opening a full editor.
+> A lightweight Windows file converter with Explorer context-menu integration. Export files to practical formats in just two clicks, without opening a full editor.
 
-## What it does
+---
 
-- adds a classic Windows Explorer submenu: `Convert to`
-- includes a small `Advanced...` window for format and quality selection
-- works offline after installation
-- bundles the required converter tools with the app build
-- targets Windows 11 and uses the classic context menu under `Show more options`
+## ✨ Features
 
-## Supported formats in v1
+- **Context Menu Integration**: Adds a classic Windows Explorer `Convert to` submenu.
+- **Advanced Options**: Includes a minimal GUI for format and quality selection when needed.
+- **Fully Offline**: Works entirely offline with zero cloud dependency after installation.
+- **Batteries Included**: Bundles required converter tools (FFmpeg, ImageMagick, LibRaw) directly with the app.
+- **Windows 11 Ready**: Accessible via the classic context menu under `Show more options`.
+- **Safe Conversions**: Never overwrites your original files. Output files are automatically named `<name>.converted.<ext>` (or `... (2).<ext>` if a file already exists).
 
-### Video
+---
 
-- `MP4 -> GIF`
-- `MP4 <-> WebM`
-- `MP4 <-> MOV`
-- `MP4 <-> AVI`
-- `MP4 <-> MKV`
-- `AVI -> MP4`
-- `MKV -> MP4`
-- `Video -> MP3 / WAV`
+## 🗂️ Supported Formats (v1)
 
-### Images
+### 🎬 Video
+* `MP4` ➡️ `GIF`
+* `MP4` ↔️ `WebM` / `MOV` / `AVI` / `MKV`
+* `AVI` / `MKV` ➡️ `MP4`
+* `Video` ➡️ `MP3` / `WAV` (Audio Extraction)
 
-- `PNG <-> JPG / JPEG`
-- `PNG / JPG -> WebP`
-- `HEIC -> JPG`
-- `SVG -> PNG / JPG`
-- `CR2 / ARW -> JPG`
+### 🖼️ Images
+* `PNG` ↔️ `JPG` / `JPEG`
+* `PNG` / `JPG` ➡️ `WebP`
+* `HEIC` / `SVG` / `CR2` / `ARW` ➡️ `JPG` (or `PNG` for SVG)
 
-### Audio
+### 🎵 Audio
+* `MP3` ↔️ `WAV` / `FLAC` / `OGG` / `AAC` / `M4A`
+* `WAV` ➡️ `MP3`
 
-- `MP3 <-> WAV`
-- `MP3 <-> FLAC`
-- `MP3 <-> OGG / AAC / M4A`
-- `WAV -> MP3`
+---
 
-## Current status
+## 🚀 Installation & Usage
 
-Working locally and already verified:
+### Standard Install
+1. Download the latest `ConvertIT_..._x64-setup.exe` from [GitHub Releases](https://github.com/Wisnia9600/ConvertIT/releases).
+2. Run the installer and complete the setup.
+3. Right-click a supported file in Windows Explorer.
+   * *Note: On Windows 11, click `Show more options` first.*
+4. Open the `Convert to` menu and choose your target format!
 
-- frontend production build
-- Rust backend tests
-- Tauri Windows bundle build
-- smoke-tested conversions:
-  - `MP4 -> GIF`
-  - `PNG -> JPG`
-  - `CR2 -> JPG`
-- Explorer shell registration and cleanup
-- bundled vendor tools for FFmpeg, ImageMagick, and LibRaw
+**Troubleshooting the Explorer Menu:**
+If the menu doesn't appear, ensure you are right-clicking a *supported* file type. If it still doesn't show up, launch the ConvertIT desktop app once manually to initialize settings, then retry.
 
-## Install on a new PC
+---
 
-### Normal user install
+## 💻 CLI Usage
 
-1. Download the latest `ConvertIT_..._x64-setup.exe` from GitHub Releases.
-2. Run the installer.
-3. Finish setup.
-4. Right-click a supported file.
-5. On Windows 11, click `Show more options`.
-6. Open `Convert to` and choose a target format.
+ConvertIT can also be used via the command line for automation or advanced control:
 
-### What the installer gives you
+```powershell
+# Convert a file using a specific preset
+ConvertIT.exe convert --input "C:\path\file.mp4" --preset video.mp4_to_gif
 
-- the `ConvertIT` desktop app
-- the release binary and bundled converter tools
-- Explorer context-menu support for supported file types
+# Open the advanced GUI for a specific file
+ConvertIT.exe advanced --input "C:\path\file.mp4"
 
-### First-use behavior
+# Manage shell registration manually
+ConvertIT.exe install-shell
+ConvertIT.exe uninstall-shell
 
-- converted files are saved next to the original file
-- output name format is `<name>.converted.<ext>`
-- if that name already exists, ConvertIT creates `<name>.converted (2).<ext>` and so on
-- files are not overwritten by default
+```
 
-### If something does not show up in Explorer
+---
 
-- make sure you are right-clicking a supported file type
-- on Windows 11, use `Show more options`
-- if needed, launch ConvertIT once and retry
-
-## Build from source
+## 🛠️ Build from Source
 
 ### Requirements
 
-- Node.js 22+
-- `pnpm` via Corepack
-- Rust stable toolchain
-- Microsoft Visual Studio Build Tools with C++ workload
+* **Node.js**: v22+
+* **Package Manager**: `pnpm` (via Corepack)
+* **Rust**: Stable toolchain
+* **C++ Workload**: Microsoft Visual Studio Build Tools
 
-### Development setup
+### Development Setup
 
 ```powershell
+# Enable Corepack and install dependencies
 corepack enable
 corepack pnpm install
+
+# Build frontend and test backend
 corepack pnpm build
 cargo test --manifest-path src-tauri/Cargo.toml
+
+# Build the Tauri Windows bundle
 corepack pnpm tauri:build
+
 ```
 
-### Helper script
-
-There is also a bootstrap helper:
+**Helper Script:** Alternatively, use the included bootstrap script for a quick start:
 
 ```powershell
 ./scripts/bootstrap-dev.ps1
+
 ```
 
-## Project structure
+---
 
-- `src/` - React UI for the advanced conversion window
-- `src-tauri/` - Rust backend, shell registration, settings, packaging
-- `scripts/` - helper scripts for local setup and vendor tools
-- `vendor/` - third-party tool notes and locally staged binaries
+## 📁 Project Structure
 
-## Bundled tools
+* `src/` — React UI for the advanced conversion window.
+* `src-tauri/` — Rust backend, shell registration, settings, and packaging.
+* `scripts/` — Helper scripts for local setup and fetching vendor tools (`fetch-tools.ps1`).
+* `vendor/` — Third-party tool notes and locally staged binaries (not stored in git history).
 
-ConvertIT is designed to package external converter tools during release builds instead of storing them directly in git history.
+*Third-party tools packaged during release: FFmpeg/FFprobe, ImageMagick, and LibRaw (`dcraw_emu.exe` + `libraw.dll`). See `vendor/THIRD_PARTY_LICENSES.md` for license details.*
 
-Included tooling strategy:
+---
 
-- FFmpeg / FFprobe for video and audio
-- ImageMagick for image conversion and SVG rasterization
-- LibRaw (`dcraw_emu.exe` + `libraw.dll`) for RAW decoding
+## 🗺️ Roadmap
 
-See:
+**v1 (Current)**
 
-- `scripts/fetch-tools.ps1`
-- `vendor/THIRD_PARTY_LICENSES.md`
+* [x] Multimedia and image conversions
+* [x] Windows installer & Explorer context menu
+* [x] Lightweight advanced GUI
 
-## CLI examples
+**v2 (Planned)**
 
-```powershell
-ConvertIT.exe convert --input "C:\path\file.mp4" --preset video.mp4_to_gif
-ConvertIT.exe advanced --input "C:\path\file.mp4"
-ConvertIT.exe install-shell
-ConvertIT.exe uninstall-shell
-```
+* [ ] `PDF` / `DOCX` / `Markdown` document conversions
+* [ ] Native Windows 11 modern context-menu integration
+* [ ] Broader document processing pipeline
 
-## Roadmap
+---
 
-### v1
-
-- multimedia and image conversions
-- Windows installer
-- Explorer context menu
-- lightweight advanced GUI
-
-### v2
-
-- `PDF / DOCX / Markdown` conversions
-- native Windows 11 modern context-menu integration
-- broader document pipeline
-
-## Notes
-
-- bundle identifier: `com.convertit.desktop`
-- public repository: `Wisnia9600/ConvertIT`
-- current local installer size is about `105 MB`
+*Bundle identifier: `com.convertit.desktop*`
