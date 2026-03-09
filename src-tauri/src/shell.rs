@@ -4,6 +4,8 @@ use std::collections::BTreeMap;
 use std::path::Path;
 
 #[cfg(windows)]
+use windows_sys::Win32::UI::Shell::{SHCNE_ASSOCCHANGED, SHCNF_IDLIST, SHChangeNotify};
+#[cfg(windows)]
 use winreg::enums::HKEY_CURRENT_USER;
 #[cfg(windows)]
 use winreg::RegKey;
@@ -35,6 +37,9 @@ pub fn install_shell_menu(executable_path: &Path) -> Result<(), String> {
         base_key
             .set_value("MUIVerb", &"Convert to")
             .map_err(|error| format!("Failed to set menu title for {extension}: {error}"))?;
+        base_key
+            .set_value("SubCommands", &"")
+            .map_err(|error| format!("Failed to mark submenu for {extension}: {error}"))?;
         base_key
             .set_value("Icon", &executable_path.display().to_string())
             .map_err(|error| format!("Failed to set menu icon for {extension}: {error}"))?;
@@ -77,6 +82,8 @@ pub fn install_shell_menu(executable_path: &Path) -> Result<(), String> {
             .map_err(|error| format!("Failed to register advanced command for {extension}: {error}"))?;
     }
 
+    notify_shell_change();
+
     Ok(())
 }
 
@@ -104,7 +111,17 @@ pub fn uninstall_shell_menu() -> Result<(), String> {
             }
         }
     }
+
+    notify_shell_change();
+
     Ok(())
+}
+
+#[cfg(windows)]
+fn notify_shell_change() {
+    unsafe {
+        SHChangeNotify(SHCNE_ASSOCCHANGED as i32, SHCNF_IDLIST, std::ptr::null(), std::ptr::null());
+    }
 }
 
 #[cfg(not(windows))]

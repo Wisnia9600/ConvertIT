@@ -315,7 +315,7 @@ checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
 
 [[package]]
 name = "convertit"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "dirs",
  "open",
@@ -324,6 +324,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "thiserror 2.0.18",
+ "windows-sys 0.59.0",
  "winreg",
 ]
 
