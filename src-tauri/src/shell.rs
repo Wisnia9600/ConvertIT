@@ -120,31 +120,16 @@ fn build_shell_command(executable_path: &Path, preset_id: &str) -> String {
         repo_vbs_helper
     };
 
-    let packaged_helper = executable_path
-        .parent()
-        .map(|parent| parent.join("convert-shell.ps1"))
-        .unwrap_or_else(|| Path::new("convert-shell.ps1").to_path_buf());
-    let repo_helper = std::env::current_dir()
-        .map(|path| path.join("scripts").join("convert-shell.ps1"))
-        .unwrap_or_else(|_| Path::new("scripts").join("convert-shell.ps1"));
-    let helper_script = if packaged_helper.exists() {
-        packaged_helper
-    } else {
-        repo_helper
-    };
-
     if vbs_helper.exists() {
         format!(
-            "wscript.exe \"{}\" \"{}\" \"{}\" \"%1\" \"{}\"",
+            "wscript.exe \"{}\" \"{}\" \"%1\" \"{}\"",
             vbs_helper.display(),
-            helper_script.display(),
             executable_path.display(),
             preset_id
         )
     } else {
         format!(
-            "powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{}\" -ExecutablePath \"{}\" -InputPath \"%1\" -PresetId \"{}\"",
-            helper_script.display(),
+            "\"{}\" shell-convert --input \"%1\" --preset \"{}\"",
             executable_path.display(),
             preset_id
         )

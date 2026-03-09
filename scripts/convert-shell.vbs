@@ -1,11 +1,10 @@
 Option Explicit
 
-If WScript.Arguments.Count <> 4 Then
+If WScript.Arguments.Count <> 3 Then
   MsgBox "ConvertIT launcher received invalid arguments.", vbCritical, "ConvertIT"
   WScript.Quit 2
 End If
 
-Dim helperScript
 Dim executablePath
 Dim inputPath
 Dim presetId
@@ -13,18 +12,15 @@ Dim shell
 Dim command
 Dim exitCode
 
-helperScript = WScript.Arguments.Item(0)
-executablePath = WScript.Arguments.Item(1)
-inputPath = WScript.Arguments.Item(2)
-presetId = WScript.Arguments.Item(3)
+executablePath = WScript.Arguments.Item(0)
+inputPath = WScript.Arguments.Item(1)
+presetId = WScript.Arguments.Item(2)
 
 Set shell = CreateObject("WScript.Shell")
 
-command = "powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File " _
-  & Quote(helperScript) _
-  & " -ExecutablePath " & Quote(executablePath) _
-  & " -InputPath " & Quote(inputPath) _
-  & " -PresetId " & Quote(presetId)
+command = Quote(executablePath) _
+  & " shell-convert --input " & Quote(inputPath) _
+  & " --preset " & Quote(presetId)
 
 exitCode = shell.Run(command, 0, True)
 WScript.Quit exitCode

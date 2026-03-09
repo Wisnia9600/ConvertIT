@@ -24,7 +24,9 @@ $filesToCopy = @(
   "convertit.exe",
   "convert-shell.ps1",
   "convert-shell.vbs",
+  "install.cmd",
   "install-shell.ps1",
+  "uninstall.cmd",
   "uninstall-shell.ps1",
   "update.ps1",
   "README.txt"
@@ -55,4 +57,4 @@ if ($AddToPath) {
 
 & (Join-Path $InstallDir "convertit.exe") install-shell
 
-Write-Host "ConvertIT updated in $InstallDir"
+Write-Host "ConvertIT installed in $InstallDir"

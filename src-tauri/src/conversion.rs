@@ -348,14 +348,6 @@ fn summarize_output(command: &CommandSpec, output: &Output) -> Vec<String> {
 }
 
 fn reveal_output_path(output_path: &Path) {
-    #[cfg(windows)]
-    {
-        let select_arg = OsString::from(format!(r#"/select,"{}""#, output_path.display()));
-        if Command::new("explorer.exe").arg(select_arg).spawn().is_ok() {
-            return;
-        }
-    }
-
     if let Some(folder) = output_path.parent() {
         let _ = open::that_detached(folder);
     }

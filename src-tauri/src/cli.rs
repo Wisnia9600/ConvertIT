@@ -2,6 +2,7 @@ use crate::models::{ConversionRequest, QualityPreset};
 
 pub enum CliAction {
     Convert(ConversionRequest),
+    ShellConvert(ConversionRequest),
     InstallShell,
     UninstallShell,
     Help,
@@ -19,24 +20,8 @@ where
     };
 
     match subcommand.as_str() {
-        "convert" => {
-            let remaining = values.collect::<Vec<_>>();
-            let input_path = parse_named_arg(remaining.clone(), "--input")?
-                .ok_or_else(|| "Missing required --input argument".to_string())?;
-            let preset_id = parse_named_arg(remaining.clone(), "--preset")?
-                .ok_or_else(|| "Missing required --preset argument".to_string())?;
-            let quality_preset = parse_named_arg(remaining.clone(), "--quality")?;
-            Ok(CliAction::Convert(ConversionRequest {
-                input_path,
-                preset_id,
-                quality_preset: quality_preset
-                    .as_deref()
-                    .map(parse_quality_preset)
-                    .transpose()?
-                    .unwrap_or_default(),
-                open_folder_after_convert: has_flag(remaining, "--open-folder"),
-            }))
-        }
+        "convert" => Ok(CliAction::Convert(parse_conversion_request(values.collect::<Vec<_>>(), false)?)),
+        "shell-convert" => Ok(CliAction::ShellConvert(parse_conversion_request(values.collect::<Vec<_>>(), true)?)),
         "install-shell" => Ok(CliAction::InstallShell),
         "uninstall-shell" => Ok(CliAction::UninstallShell),
         "help" | "--help" | "-h" => Ok(CliAction::Help),
@@ -49,9 +34,29 @@ pub fn print_help(program_name: &str) {
     println!();
     println!("Usage:");
     println!("  {program_name} convert --input <path> --preset <id> [--quality fast|balanced|best] [--open-folder]");
+    println!("  {program_name} shell-convert --input <path> --preset <id> [--quality fast|balanced|best]");
     println!("  {program_name} install-shell");
     println!("  {program_name} uninstall-shell");
     println!("  {program_name} help");
+}
+
+fn parse_conversion_request(values: Vec<String>, open_folder_after_convert: bool) -> Result<ConversionRequest, String> {
+    let input_path = parse_named_arg(values.clone(), "--input")?
+        .ok_or_else(|| "Missing required --input argument".to_string())?;
+    let preset_id = parse_named_arg(values.clone(), "--preset")?
+        .ok_or_else(|| "Missing required --preset argument".to_string())?;
+    let quality_preset = parse_named_arg(values.clone(), "--quality")?;
+
+    Ok(ConversionRequest {
+        input_path,
+        preset_id,
+        quality_preset: quality_preset
+            .as_deref()
+            .map(parse_quality_preset)
+            .transpose()?
+            .unwrap_or_default(),
+        open_folder_after_convert: open_folder_after_convert || has_flag(values, "--open-folder"),
+    })
 }
 
 fn parse_named_arg(values: Vec<String>, name: &str) -> Result<Option<String>, String> {
@@ -132,6 +137,26 @@ mod tests {
                 assert!(request.open_folder_after_convert);
             }
             _ => panic!("expected convert action"),
+        }
+    }
+
+    #[test]
+    fn shell_convert_forces_open_folder() {
+        let action = parse(vec![
+            "convertit.exe".to_string(),
+            "shell-convert".to_string(),
+            "--input".to_string(),
+            "C:/demo/file.mp4".to_string(),
+            "--preset".to_string(),
+            "video.mp4_to_gif".to_string(),
+        ])
+        .expect("shell-convert command should parse");
+
+        match action {
+            CliAction::ShellConvert(request) => {
+                assert!(request.open_folder_after_convert);
+            }
+            _ => panic!("expected shell convert action"),
         }
     }
 }
