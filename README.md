@@ -87,8 +87,7 @@ cargo test --manifest-path src-tauri/Cargo.toml
 cargo build --release --manifest-path src-tauri/Cargo.toml
 
 # Package the release
-./scripts/package-release.ps1 -Version 0.1.1
-
+./scripts/package-release.ps1 -Version 0.1.2
 ```
 
 ---
