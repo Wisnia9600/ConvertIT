@@ -50,15 +50,13 @@ Working locally and already verified:
 - smoke-tested conversions:
   - `MP4 -> GIF`
   - `PNG -> JPG`
+  - `CR2 -> JPG`
 - Explorer shell registration and cleanup
-
-Current gap:
-
-- `CR2 / ARW -> JPG` is implemented, but still needs `dcraw_emu.exe` staged for full local end-to-end verification
+- bundled vendor tools for FFmpeg, ImageMagick, and LibRaw
 
 ## Install on a new PC
 
-### Option 1: normal user install
+### Normal user install
 
 1. Download the latest `ConvertIT_..._x64-setup.exe` from GitHub Releases.
 2. Run the installer.
@@ -124,11 +122,11 @@ There is also a bootstrap helper:
 
 ConvertIT is designed to package external converter tools during release builds instead of storing them directly in git history.
 
-Planned/runtime tools:
+Included tooling strategy:
 
-- FFmpeg / FFprobe
-- ImageMagick
-- `dcraw_emu` for RAW decoding
+- FFmpeg / FFprobe for video and audio
+- ImageMagick for image conversion and SVG rasterization
+- LibRaw (`dcraw_emu.exe` + `libraw.dll`) for RAW decoding
 
 See:
 
