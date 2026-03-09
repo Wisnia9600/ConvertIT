@@ -34,8 +34,10 @@ New-Item -ItemType Directory -Force -Path $vendorTarget | Out-Null
 Copy-Item $resolvedExe (Join-Path $packageRoot "convertit.exe") -Force
 Copy-Item (Join-Path $resolvedVendor "*") $vendorTarget -Recurse -Force
 Copy-Item "./scripts/convert-shell.ps1" (Join-Path $packageRoot "convert-shell.ps1") -Force
+Copy-Item "./scripts/convert-shell.vbs" (Join-Path $packageRoot "convert-shell.vbs") -Force
 Copy-Item "./scripts/install-shell.ps1" (Join-Path $packageRoot "install-shell.ps1") -Force
 Copy-Item "./scripts/uninstall-shell.ps1" (Join-Path $packageRoot "uninstall-shell.ps1") -Force
+Copy-Item "./scripts/update.ps1" (Join-Path $packageRoot "update.ps1") -Force
 
 @"
 ConvertIT
@@ -46,6 +48,7 @@ This package contains the CLI build of ConvertIT and the bundled converter tools
 Examples:
   .\convertit.exe convert --input "C:\path\video.mp4" --preset video.mp4_to_gif
   .\install-shell.ps1
+  .\update.ps1
   .\uninstall-shell.ps1
 "@ | Set-Content (Join-Path $packageRoot "README.txt")
 
