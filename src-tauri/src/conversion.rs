@@ -5,7 +5,7 @@ use std::process::{Command, Output};
 
 use thiserror::Error;
 
-use crate::models::{ConversionRequest, ConversionResult, ProgressEvent, QualityPreset};
+use crate::models::{ConversionRequest, ConversionResult, QualityPreset};
 use crate::presets::{self, PresetDefinition, PresetKind};
 
 #[derive(Debug, Error)]
@@ -42,29 +42,28 @@ struct CommandSpec {
 
 pub fn run_conversion<F>(request: &ConversionRequest, emit_progress: F) -> Result<ConversionResult, ConversionError>
 where
-    F: Fn(ProgressEvent),
+    F: Fn(&str, &str),
 {
     let preset = presets::find_by_id(&request.preset_id)
         .ok_or_else(|| ConversionError::UnsupportedPreset(request.preset_id.clone()))?;
 
     validate_input_extension(&request.input_path, preset)?;
 
-    emit_progress(progress("starting", &format!("Preparing {}", preset.label)));
+    emit_progress("starting", &format!("Preparing {}", preset.label));
 
     let input_path = PathBuf::from(&request.input_path);
     let output_path = next_output_path(&input_path, preset.target_extension)?;
     let quality = quality_profile(&request.quality_preset);
 
     let result = if matches!(preset.kind, PresetKind::RawToJpg) {
-        emit_progress(progress("running", "Running LibRaw decode and JPG encode"));
+        emit_progress("running", "Running LibRaw decode and JPG encode");
         run_raw_conversion(request, &input_path, &output_path, &quality)?
     } else {
         let command = build_command(preset, &input_path, &output_path, &quality)?;
-        emit_progress(progress("running", &format!("Running {}", command.tool)));
+        emit_progress("running", &format!("Running {}", command.tool));
         let output = execute_command(&command)?;
         ConversionResult {
             output_path: output_path.display().to_string(),
-            preset_id: request.preset_id.clone(),
             tool: command.tool.to_string(),
             log_summary: summarize_output(&command, &output),
         }
@@ -76,7 +75,7 @@ where
         }
     }
 
-    emit_progress(progress("finished", &format!("Saved {}", output_path.display())));
+    emit_progress("finished", &format!("Saved {}", output_path.display()));
 
     Ok(result)
 }
@@ -242,7 +241,7 @@ fn magick_convert(
 }
 
 fn run_raw_conversion(
-    request: &ConversionRequest,
+    _request: &ConversionRequest,
     input_path: &Path,
     output_path: &Path,
     quality: &QualityProfile,
@@ -308,7 +307,6 @@ fn run_raw_conversion(
 
     Ok(ConversionResult {
         output_path: output_path.display().to_string(),
-        preset_id: request.preset_id.clone(),
         tool: "dcraw_emu + ImageMagick".to_string(),
         log_summary: vec![
             "RAW decode pipeline".to_string(),
@@ -377,13 +375,6 @@ fn quality_profile(quality: &QualityPreset) -> QualityProfile {
             gif_width: "1280",
             image_quality: "92",
         },
-    }
-}
-
-fn progress(stage: &str, message: &str) -> ProgressEvent {
-    ProgressEvent {
-        stage: stage.to_string(),
-        message: message.to_string(),
     }
 }
 

@@ -16,10 +16,10 @@ $resolvedVendor = (Resolve-Path $VendorDir).Path
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 $resolvedOutputDir = (Resolve-Path $OutputDir).Path
 
-$stagingRoot = Join-Path $env:TEMP "convertit-nogui-$Version"
-$packageRoot = Join-Path $stagingRoot "ConvertIT-NoGUI"
+$stagingRoot = Join-Path $env:TEMP "convertit-release-$Version"
+$packageRoot = Join-Path $stagingRoot "ConvertIT"
 $vendorTarget = Join-Path $packageRoot "vendor\bin"
-$zipPath = Join-Path $resolvedOutputDir "ConvertIT_${Version}_x64-nogui.zip"
+$zipPath = Join-Path $resolvedOutputDir "ConvertIT_${Version}_x64.zip"
 
 if (Test-Path $stagingRoot) {
   Remove-Item $stagingRoot -Recurse -Force
@@ -33,12 +33,13 @@ New-Item -ItemType Directory -Force -Path $vendorTarget | Out-Null
 
 Copy-Item $resolvedExe (Join-Path $packageRoot "convertit.exe") -Force
 Copy-Item (Join-Path $resolvedVendor "*") $vendorTarget -Recurse -Force
+Copy-Item "./scripts/convert-shell.ps1" (Join-Path $packageRoot "convert-shell.ps1") -Force
 Copy-Item "./scripts/install-shell.ps1" (Join-Path $packageRoot "install-shell.ps1") -Force
 Copy-Item "./scripts/uninstall-shell.ps1" (Join-Path $packageRoot "uninstall-shell.ps1") -Force
 
 @"
-ConvertIT NoGUI
-================
+ConvertIT
+=========
 
 This package contains the CLI build of ConvertIT and the bundled converter tools.
 

@@ -12,17 +12,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.7.0
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
@@ -31,18 +20,12 @@ jobs:
         run: |
           choco install ffmpeg imagemagick --yes
 
-      - name: Install frontend dependencies
-        run: corepack pnpm install --frozen-lockfile=false
-
       - name: Prepare vendor tools
         shell: pwsh
         run: ./scripts/fetch-tools.ps1 -Destination "./vendor/bin"
 
-      - name: Typecheck frontend
-        run: corepack pnpm build
-
       - name: Test Rust logic
         run: cargo test --manifest-path src-tauri/Cargo.toml
 
-      - name: Build desktop bundle
-        run: corepack pnpm tauri:build
+      - name: Build release binary
+        run: cargo build --release --manifest-path src-tauri/Cargo.toml

@@ -1,8 +1,6 @@
 use std::collections::BTreeSet;
 use std::path::Path;
 
-use crate::models::ConversionPreset;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PresetKind {
     Mp4ToGif,
@@ -35,6 +33,7 @@ pub enum PresetKind {
     M4aToMp3,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub struct PresetDefinition {
     pub id: &'static str,
@@ -85,22 +84,6 @@ pub fn find_by_id(id: &str) -> Option<&'static PresetDefinition> {
     PRESETS.iter().find(|preset| preset.id == id)
 }
 
-pub fn for_input_path(input_path: Option<&str>) -> Vec<ConversionPreset> {
-    let Some(path) = input_path else {
-        return PRESETS.iter().map(as_api_model).collect();
-    };
-
-    let Some(extension) = normalized_extension(path) else {
-        return Vec::new();
-    };
-
-    PRESETS
-        .iter()
-        .filter(|preset| preset.source_extensions.iter().any(|candidate| *candidate == extension))
-        .map(as_api_model)
-        .collect()
-}
-
 pub fn supported_extensions() -> BTreeSet<&'static str> {
     let mut values = BTreeSet::new();
     for preset in PRESETS {
@@ -117,33 +100,9 @@ pub fn normalized_extension(path: &str) -> Option<String> {
         .map(|value| value.to_string_lossy().to_ascii_lowercase())
 }
 
-fn as_api_model(preset: &PresetDefinition) -> ConversionPreset {
-    ConversionPreset {
-        id: preset.id.to_string(),
-        label: preset.label.to_string(),
-        source_extensions: preset
-            .source_extensions
-            .iter()
-            .map(|extension| extension.to_string())
-            .collect(),
-        target_extension: preset.target_extension.to_string(),
-        category: preset.category.to_string(),
-        description: preset.description.to_string(),
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{for_input_path, normalized_extension, supported_extensions};
-
-    #[test]
-    fn filters_presets_by_extension() {
-        let presets = for_input_path(Some("C:/demo/sample.mp4"));
-        let ids = presets.into_iter().map(|preset| preset.id).collect::<Vec<_>>();
-        assert!(ids.contains(&"video.mp4_to_gif".to_string()));
-        assert!(ids.contains(&"audio.video_to_mp3".to_string()));
-        assert!(!ids.contains(&"image.png_to_jpg".to_string()));
-    }
+    use super::{normalized_extension, supported_extensions};
 
     #[test]
     fn normalizes_mixed_case_extensions() {

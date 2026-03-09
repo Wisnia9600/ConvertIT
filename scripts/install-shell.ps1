@@ -16,8 +16,7 @@ function Resolve-ConvertITExecutable {
   $candidates += @(
     (Join-Path $PSScriptRoot "convertit.exe"),
     (Join-Path $PSScriptRoot "..\src-tauri\target\release\convertit.exe"),
-    (Join-Path $env:LOCALAPPDATA "Programs\ConvertIT\convertit.exe"),
-    (Join-Path $env:LOCALAPPDATA "Programs\ConvertIT-NoGUI\convertit.exe")
+    (Join-Path $env:LOCALAPPDATA "Programs\ConvertIT\convertit.exe")
   )
 
   foreach ($candidate in $candidates) {

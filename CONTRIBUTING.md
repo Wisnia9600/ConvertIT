@@ -2,10 +2,10 @@
 
 ## Local workflow
 
-1. Install Node.js, `pnpm`, and Rust.
-2. Run `corepack pnpm install`.
-3. Start the desktop app with `corepack pnpm tauri:dev`.
-4. Run `corepack pnpm build` before opening a pull request.
+1. Install Rust and Visual Studio Build Tools with the C++ workload.
+2. Stage vendor tools with `./scripts/fetch-tools.ps1 -Destination "./vendor/bin"`.
+3. Run `cargo test --manifest-path src-tauri/Cargo.toml`.
+4. Run `cargo build --release --manifest-path src-tauri/Cargo.toml` before opening a pull request.
 
 ## Pull requests
 
@@ -17,4 +17,4 @@
 ## Releases
 
 - Tag releases using `v*.*.*`.
-- GitHub Actions will build the Windows installer and attach artifacts to the release.
+- GitHub Actions will build the Windows zip package and attach artifacts to the release.

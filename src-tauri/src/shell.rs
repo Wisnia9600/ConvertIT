@@ -56,30 +56,11 @@ pub fn install_shell_menu(executable_path: &Path) -> Result<(), String> {
             let (command_key, _) = hkcu
                 .create_subkey(format!("{command_path}\\command"))
                 .map_err(|error| format!("Failed to create command key for {}: {error}", preset.id))?;
-            let command = format!(
-                "\"{}\" convert --input \"%1\" --preset {}",
-                executable_path.display(),
-                preset.id
-            );
+            let command = build_shell_command(executable_path, preset.id);
             command_key
                 .set_value("", &command)
                 .map_err(|error| format!("Failed to register command for {}: {error}", preset.id))?;
         }
-
-        let advanced_path = format!("{base_path}\\shell\\advanced");
-        let (advanced_key, _) = hkcu
-            .create_subkey(&advanced_path)
-            .map_err(|error| format!("Failed to create advanced menu key {advanced_path}: {error}"))?;
-        advanced_key
-            .set_value("MUIVerb", &"Advanced...")
-            .map_err(|error| format!("Failed to set advanced menu label for {extension}: {error}"))?;
-        let (command_key, _) = hkcu
-            .create_subkey(format!("{advanced_path}\\command"))
-            .map_err(|error| format!("Failed to create advanced command key for {extension}: {error}"))?;
-        let command = format!("\"{}\" advanced --input \"%1\"", executable_path.display());
-        command_key
-            .set_value("", &command)
-            .map_err(|error| format!("Failed to register advanced command for {extension}: {error}"))?;
     }
 
     notify_shell_change();
@@ -122,6 +103,29 @@ fn notify_shell_change() {
     unsafe {
         SHChangeNotify(SHCNE_ASSOCCHANGED as i32, SHCNF_IDLIST, std::ptr::null(), std::ptr::null());
     }
+}
+
+#[cfg(windows)]
+fn build_shell_command(executable_path: &Path, preset_id: &str) -> String {
+    let packaged_helper = executable_path
+        .parent()
+        .map(|parent| parent.join("convert-shell.ps1"))
+        .unwrap_or_else(|| Path::new("convert-shell.ps1").to_path_buf());
+    let repo_helper = std::env::current_dir()
+        .map(|path| path.join("scripts").join("convert-shell.ps1"))
+        .unwrap_or_else(|_| Path::new("scripts").join("convert-shell.ps1"));
+    let helper_script = if packaged_helper.exists() {
+        packaged_helper
+    } else {
+        repo_helper
+    };
+
+    format!(
+        "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{}\" -ExecutablePath \"{}\" -InputPath \"%1\" -PresetId \"{}\"",
+        helper_script.display(),
+        executable_path.display(),
+        preset_id
+    )
 }
 
 #[cfg(not(windows))]

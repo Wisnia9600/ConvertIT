@@ -1,8 +1,7 @@
 param(
   [string]$Repo = "Wisnia9600/ConvertIT",
   [string]$Version = "latest",
-  [switch]$NoGui,
-  [string]$InstallDir = "$env:LOCALAPPDATA\Programs\ConvertIT-NoGUI",
+  [string]$InstallDir = "$env:LOCALAPPDATA\Programs\ConvertIT",
   [switch]$SkipShellRegistration,
   [switch]$AddToPath
 )
@@ -54,9 +53,7 @@ function Add-DirectoryToUserPath {
 
 $releaseApiUrl = Get-ReleaseApiUrl -Repository $Repo -RequestedVersion $Version
 $release = Invoke-RestMethod -Uri $releaseApiUrl -Headers @{ "User-Agent" = "ConvertIT-Installer" }
-
-$assetSuffix = if ($NoGui) { "-nogui.zip" } else { "_x64-setup.exe" }
-$asset = Get-Asset -Release $release -Suffix $assetSuffix
+$asset = Get-Asset -Release $release -Suffix "_x64.zip"
 
 $tempRoot = Join-Path $env:TEMP "convertit-install"
 New-Item -ItemType Directory -Force -Path $tempRoot | Out-Null
@@ -65,28 +62,19 @@ $downloadPath = Join-Path $tempRoot $asset.name
 Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $downloadPath -Headers @{ "User-Agent" = "ConvertIT-Installer" }
 Unblock-File -Path $downloadPath -ErrorAction SilentlyContinue
 
-if ($NoGui) {
-  New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
-  Expand-Archive -Path $downloadPath -DestinationPath $InstallDir -Force
-  $exePath = Join-Path $InstallDir "convertit.exe"
+New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+Expand-Archive -Path $downloadPath -DestinationPath $InstallDir -Force
+$exePath = Join-Path $InstallDir "convertit.exe"
 
-  if ($AddToPath) {
-    Add-DirectoryToUserPath -Directory $InstallDir
-  }
+if ($AddToPath) {
+  Add-DirectoryToUserPath -Directory $InstallDir
+}
 
-  if (-not $SkipShellRegistration) {
-    & $exePath install-shell
-  }
+if (-not $SkipShellRegistration) {
+  & $exePath install-shell
+}
 
-  Write-Host "ConvertIT NoGUI installed to $InstallDir"
-  if ($AddToPath) {
-    Write-Host "Added $InstallDir to the current user's PATH"
-  }
-} else {
-  Start-Process -FilePath $downloadPath -ArgumentList "/S" -Wait
-  $installedExe = Join-Path $env:LOCALAPPDATA "Programs\ConvertIT\convertit.exe"
-  if ((-not $SkipShellRegistration) -and (Test-Path $installedExe)) {
-    & $installedExe install-shell
-  }
-  Write-Host "ConvertIT GUI installer finished"
+Write-Host "ConvertIT installed to $InstallDir"
+if ($AddToPath) {
+  Write-Host "Added $InstallDir to the current user's PATH"
 }

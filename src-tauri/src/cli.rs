@@ -1,10 +1,10 @@
-use crate::models::{ConversionRequest, LaunchContext, LaunchMode, QualityPreset};
+use crate::models::{ConversionRequest, QualityPreset};
 
 pub enum CliAction {
-    Launch(LaunchContext),
     Convert(ConversionRequest),
     InstallShell,
     UninstallShell,
+    Help,
 }
 
 pub fn parse<I>(args: I) -> Result<CliAction, String>
@@ -15,34 +15,43 @@ where
     let _binary = values.next();
 
     let Some(subcommand) = values.next() else {
-        return Ok(CliAction::Launch(LaunchContext::default()));
+        return Ok(CliAction::Help);
     };
 
     match subcommand.as_str() {
-        "advanced" => {
-            let input_path = parse_named_arg(values.collect(), "--input")?;
-            Ok(CliAction::Launch(LaunchContext {
-                mode: LaunchMode::Advanced,
-                input_path,
-            }))
-        }
         "convert" => {
             let remaining = values.collect::<Vec<_>>();
             let input_path = parse_named_arg(remaining.clone(), "--input")?
                 .ok_or_else(|| "Missing required --input argument".to_string())?;
-            let preset_id = parse_named_arg(remaining, "--preset")?
+            let preset_id = parse_named_arg(remaining.clone(), "--preset")?
                 .ok_or_else(|| "Missing required --preset argument".to_string())?;
+            let quality_preset = parse_named_arg(remaining.clone(), "--quality")?;
             Ok(CliAction::Convert(ConversionRequest {
                 input_path,
                 preset_id,
-                quality_preset: QualityPreset::Balanced,
-                open_folder_after_convert: false,
+                quality_preset: quality_preset
+                    .as_deref()
+                    .map(parse_quality_preset)
+                    .transpose()?
+                    .unwrap_or_default(),
+                open_folder_after_convert: has_flag(remaining, "--open-folder"),
             }))
         }
         "install-shell" => Ok(CliAction::InstallShell),
         "uninstall-shell" => Ok(CliAction::UninstallShell),
+        "help" | "--help" | "-h" => Ok(CliAction::Help),
         other => Err(format!("Unknown subcommand: {other}")),
     }
+}
+
+pub fn print_help(program_name: &str) {
+    println!("ConvertIT");
+    println!();
+    println!("Usage:");
+    println!("  {program_name} convert --input <path> --preset <id> [--quality fast|balanced|best] [--open-folder]");
+    println!("  {program_name} install-shell");
+    println!("  {program_name} uninstall-shell");
+    println!("  {program_name} help");
 }
 
 fn parse_named_arg(values: Vec<String>, name: &str) -> Result<Option<String>, String> {
@@ -56,6 +65,19 @@ fn parse_named_arg(values: Vec<String>, name: &str) -> Result<Option<String>, St
         }
     }
     Ok(None)
+}
+
+fn has_flag(values: Vec<String>, name: &str) -> bool {
+    values.into_iter().any(|value| value == name)
+}
+
+fn parse_quality_preset(value: &str) -> Result<QualityPreset, String> {
+    match value {
+        "fast" => Ok(QualityPreset::Fast),
+        "balanced" => Ok(QualityPreset::Balanced),
+        "best" => Ok(QualityPreset::Best),
+        other => Err(format!("Unsupported quality preset: {other}")),
+    }
 }
 
 #[cfg(test)]
@@ -78,6 +100,36 @@ mod tests {
             CliAction::Convert(request) => {
                 assert_eq!(request.input_path, "C:/demo/file.mp4");
                 assert_eq!(request.preset_id, "video.mp4_to_gif");
+            }
+            _ => panic!("expected convert action"),
+        }
+    }
+
+    #[test]
+    fn defaults_to_help_without_subcommand() {
+        let action = parse(vec!["convertit.exe".to_string()]).expect("command should parse");
+        assert!(matches!(action, CliAction::Help));
+    }
+
+    #[test]
+    fn parses_optional_convert_flags() {
+        let action = parse(vec![
+            "convertit.exe".to_string(),
+            "convert".to_string(),
+            "--input".to_string(),
+            "C:/demo/file.mp4".to_string(),
+            "--preset".to_string(),
+            "video.mp4_to_gif".to_string(),
+            "--quality".to_string(),
+            "best".to_string(),
+            "--open-folder".to_string(),
+        ])
+        .expect("convert command should parse");
+
+        match action {
+            CliAction::Convert(request) => {
+                assert!(matches!(request.quality_preset, crate::models::QualityPreset::Best));
+                assert!(request.open_folder_after_convert);
             }
             _ => panic!("expected convert action"),
         }
