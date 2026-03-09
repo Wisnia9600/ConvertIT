@@ -1,91 +1,107 @@
-# ConvertIT
+# 🔄 ConvertIT
 
-Lightweight Windows file converter with Explorer context-menu integration.
+[![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-blue.svg)]()
+[![Built with: Rust](https://img.shields.io/badge/Built_with-Rust-orange.svg)]()
 
-## Install
+> Lightweight Windows file converter with Explorer context-menu integration. Export files to practical formats in just two clicks.
 
-### Easiest
+---
 
-```powershell
-$script = Join-Path $env:TEMP "convertit-install.ps1"
-Invoke-WebRequest "https://raw.githubusercontent.com/Wisnia9600/ConvertIT/main/scripts/install.ps1" -OutFile $script
-& $script
-```
-
-This downloads the latest release, installs ConvertIT into `%LOCALAPPDATA%\Programs\ConvertIT`, and registers the right-click menu.
+## 🚀 Install
 
 ### From Zip
 
 1. Download the latest `ConvertIT_<version>_x64.zip` from [GitHub Releases](https://github.com/Wisnia9600/ConvertIT/releases).
-2. Extract it.
+2. Extract the archive.
 3. Run `install.cmd`.
 
 ### Uninstall
 
-Run `uninstall.cmd`.
+Simply run `uninstall.cmd` from your installation or extracted folder.
 
-## Explorer Menu
+---
+
+## 🖱️ Explorer Menu Usage
 
 1. Right-click a supported file.
-2. Click `Show more options` on Windows 11.
-3. Open `Convert to`.
+2. Click **`Show more options`** (if you are on Windows 11).
+3. Open **`Convert to`**.
 4. Pick the target format.
 
-Converted files are saved beside the original as `<name>.converted.<ext>`.
+*Note: Converted files are safely saved beside the original as `<name>.converted.<ext>`.*
 
-## Supported Formats
+---
 
-### Video
+## 🗂️ Supported Formats
 
-- `MP4` -> `GIF`
-- `MP4` <-> `WebM` / `MOV` / `AVI` / `MKV`
-- `AVI` / `MKV` -> `MP4`
-- `Video` -> `MP3` / `WAV`
+### 🎬 Video
 
-### Images
+* `MP4` ➡️ `GIF`
+* `MP4` ↔️ `WebM` / `MOV` / `AVI` / `MKV`
+* `AVI` / `MKV` ➡️ `MP4`
+* `Video` ➡️ `MP3` / `WAV` (Audio Extraction)
 
-- `PNG` <-> `JPG` / `JPEG`
-- `PNG` / `JPG` -> `WebP`
-- `HEIC` -> `JPG`
-- `SVG` -> `PNG` / `JPG`
-- `CR2` / `ARW` -> `JPG`
+### 🖼️ Images
 
-### Audio
+* `PNG` ↔️ `JPG` / `JPEG`
+* `PNG` / `JPG` ➡️ `WebP`
+* `HEIC` / `SVG` / `CR2` / `ARW` ➡️ `JPG` (or `PNG` for SVG)
 
-- `MP3` <-> `WAV` / `FLAC` / `OGG` / `AAC` / `M4A`
-- `WAV` -> `MP3`
+### 🎵 Audio
 
-## CLI Usage
+* `MP3` ↔️ `WAV` / `FLAC` / `OGG` / `AAC` / `M4A`
+* `WAV` ➡️ `MP3`
+
+---
+
+## 💻 CLI Usage
+
+You can also use ConvertIT from the command line:
 
 ```powershell
 ConvertIT.exe convert --input "C:\path\file.mp4" --preset video.mp4_to_gif
 ConvertIT.exe help
+
 ```
 
-## Build From Source
+---
 
-Requirements:
+## 🛠️ Build From Source
 
-- Rust stable
-- Visual Studio Build Tools with the C++ workload
-- FFmpeg and ImageMagick available locally, or staged with `scripts/fetch-tools.ps1`
+### Requirements
 
-Commands:
+* **Rust**: Stable toolchain
+* **C++ Workload**: Microsoft Visual Studio Build Tools
+* **Tools**: FFmpeg and ImageMagick available locally, or staged using the included fetch script.
+
+### Commands
 
 ```powershell
+# Fetch required vendor tools
 ./scripts/fetch-tools.ps1 -Destination "./vendor/bin"
+
+# Run tests
 cargo test --manifest-path src-tauri/Cargo.toml
+
+# Build the release binary
 cargo build --release --manifest-path src-tauri/Cargo.toml
+
+# Package the release
 ./scripts/package-release.ps1 -Version 0.1.1
+
 ```
 
-## Project Structure
+---
 
-- `src-tauri/` - Rust conversion logic and shell integration
-- `scripts/` - install, packaging, and helper scripts
-- `assets/` - branding assets
-- `vendor/` - third-party tool notes and staged binaries
+## 📁 Project Structure
 
-## SmartScreen
+* `src-tauri/` — Rust conversion logic and shell integration.
+* `scripts/` — Installation, packaging, and helper scripts.
+* `assets/` — Branding assets.
+* `vendor/` — Third-party tool notes and staged binaries.
 
-Windows may still show `Unknown publisher` or `Windows protected your PC` for unsigned public builds. Removing that requires code signing.
+---
+
+## ⚠️ SmartScreen Notice
+
+Windows may show an **"Unknown publisher"** or **"Windows protected your PC"** warning for unsigned public builds. Removing this prompt requires a paid code-signing certificate. Simply click "More info" and "Run anyway" to proceed.
