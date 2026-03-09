@@ -20,3 +20,5 @@ vendor/cache/
 *.bak
 Thumbs.db
 Desktop.ini
+
+tmp-smoke/
